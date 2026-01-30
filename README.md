@@ -51,3 +51,67 @@ As the project’s focus is primarily backend, some of the key metrics we’ll b
 ## Setup
 
 Please fork this repository and submit a pull request on completion with detailed documentation on your approach and rationale for the choices you made.
+
+---
+
+## Approach & Rationale
+
+For the purposes of this task, I built a minimal ISBN search tool using the TALL stack as per the requirements.
+
+1. Architecture: The Service Layer
+Instead of putting API logic directly into the Livewire component, I created a GoogleBooksService.
+
+Why: This keeps the component thin and focused on the UI state. It also makes writing test easier. If we ever switched from Google Books to another API, I’d only need to update this one class.
+
+2. Data Handling: DTOs
+I used a BookDataDto to move data between the Service and the Component.
+
+Why: Raw API responses from Google are deeply nested and messy. Mapping them to a DTO immediately after the fetch ensures that the rest of the app works with a predictable object.
+
+3. Performance: Caching
+I wrapped the API call in Laravel’s Cache::remember.
+
+Why: ISBN data is static—a book's title and author don't change. By caching the results for 24 hours, we avoid hitting the Google API rate limits and provide near-instant results for repeat searches.
+
+4. User Experience & Security
+Rate Limiting: I added a simple rate limiter (5 requests per minute) to the search method using Laravel's RateLimiter facade to prevent automated abuse of the API key.
+
+Livewire Validation: Used the #[Validate] attribute for real-time validation of the ISBN format before the request leaves the server.
+
+5. Design Choice
+I went with a dark "Zinc" theme using Tailwind CSS and kept the UI minimal to ensure the focus remains on the book metadata.
+
+---
+
+## Project Structure
+
+Key application components relevant to this task:
+
+```
+app/
+├── DTOs/BookDataDto.php
+├── Http/Controllers/BookLookupController.php
+├── Livewire/IsbnSearch.php
+├── Services/GoogleBooksService.php
+resources/views/
+├── layouts/app.blade.php
+├── livewire/isbn-search.blade.php
+├── isbn-lookup.blade.php
+tests/Feature/
+├── GoogleBooksCacheTest.php
+└── IsbnSearchTest.php
+```
+
+## Installation
+
+1. Clone the repo and run `composer install`.
+2. Copy `.env.example` to `.env`.
+3. Add your `GOOGLE_BOOKS_API_KEY` to the `.env` file.
+4. Run `php artisan key:generate`.
+5. Run `php artisan serve` and visit `localhost:8000`.
+
+To run the tests:
+
+```bash
+php artisan test
+```
